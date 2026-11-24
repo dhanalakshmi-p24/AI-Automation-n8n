@@ -1,0 +1,202 @@
+{
+  "name": "Google-Sheet",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -208,
+        -48
+      ],
+      "id": "254b7e4f-294f-44a7-9feb-bd9af4deee4e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1Va6TJi6mgMFSm95flRIUHYrz9bDXEivliY1abe0GS6w",
+          "mode": "list",
+          "cachedResultName": "Student-List",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Va6TJi6mgMFSm95flRIUHYrz9bDXEivliY1abe0GS6w/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1Va6TJi6mgMFSm95flRIUHYrz9bDXEivliY1abe0GS6w/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": []
+        },
+        "combineFilters": "=OR",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        16,
+        -48
+      ],
+      "id": "0b4427be-6657-423b-959b-4a2ffb088678",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "90yJN8t0j00nd8Zx",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a professional email from this data.\n{{ $json.Email }}\nName: {{ $json.Name }}\n\nCourse: {{ $json.Course }}\n\nGenerate:{{ $json.Stauts }}\n\nSubject:\nMessage:\n\nKeep the email professional and concise.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        -64
+      ],
+      "id": "212d1661-f405-449a-970e-4523218f6088",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "responsesApiEnabled": "=",
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        112,
+        160
+      ],
+      "id": "96f84f79-aedd-4f0d-89ab-5d7d0888e552",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "dnMRfWDIMRcCjBQO",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "pdhanalakshmi24@gmail.com",
+        "subject": "={{$json.subject}}",
+        "message": "={{$json.emailBody}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        80
+      ],
+      "id": "958405e4-9cb0-4d7e-a3e6-6ca502c88c50",
+      "name": "Send a message",
+      "webhookId": "086511e6-961a-468a-88b5-17b078630373",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "eUf1dr2AwOD1n2jf",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of $input.all()) {\n  const output = item.json.output || \"\";\n\n  const subjectMatch = output.match(/^Subject:\\s*(.*?)(\\\\n\\\\n|\\n\\n)/s);\n\n  item.json.subject = subjectMatch ? subjectMatch[1].trim() : \"Course Enrollment\";\n\n  for (const item of $input.all()) {\n\n  item.json.emailBody = item.json.output\n    .replace(/^Subject:.*?(\\n\\n|\\\\n\\\\n)/s, '')\n    .replace(/\\\\n/g, '\\n');\n\n}\n}\n\n\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -64
+      ],
+      "id": "deea6e35-d3bb-41f4-b417-9149ae919ac0",
+      "name": "Code in JavaScript"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8a01895f-f46d-4f6f-a892-096f0734c3f0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9f828e72431cf0f36e3ddd0fc18455163425092dc6d22bc949757f8bd14e7f1e"
+  },
+  "nodeGroups": [],
+  "id": "yGoDnDjkCKQIM5ag",
+  "tags": []
+}
